@@ -1,7 +1,7 @@
 <?php
 /**
  * @package Better_Signups
- * @version .1
+ * @version .2
  */
 /*
 Plugin Name: Better Signups

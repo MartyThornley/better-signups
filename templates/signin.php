@@ -8,9 +8,6 @@
  * @package WordPress
  */
 
-/** Make sure that the WordPress bootstrap has run before continuing. */
-//require( dirname(__FILE__) . '/wp-load.php' );
-
 // Redirect to https login if forced to use SSL
 if ( force_ssl_admin() && ! is_ssl() ) {
 	if ( 0 === strpos($_SERVER['REQUEST_URI'], 'http') ) {
@@ -22,14 +19,10 @@ if ( force_ssl_admin() && ! is_ssl() ) {
 	}
 }
 
-//
-// Main
-//
-
-$action = isset($_REQUEST['action']) ? $_REQUEST['action'] : 'login';
+$action = isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'login';
 $errors = new WP_Error();
 
-if ( isset($_GET['key']) )
+if ( isset( $_GET['key'] ) )
 	$action = 'resetpass';
 
 // validate action so as to default to the login screen
@@ -38,10 +31,10 @@ if ( !in_array( $action, array( 'postpass', 'logout', 'lostpassword', 'retrievep
 
 nocache_headers();
 
-header('Content-Type: '.get_bloginfo('html_type').'; charset='.get_bloginfo('charset'));
+header('Content-Type: '.get_bloginfo( 'html_type' ).'; charset='.get_bloginfo( 'charset' ) );
 
 if ( defined( 'RELOCATE' ) && RELOCATE ) { // Move flag is set
-	if ( isset( $_SERVER['PATH_INFO'] ) && ($_SERVER['PATH_INFO'] != $_SERVER['PHP_SELF']) )
+	if ( isset( $_SERVER['PATH_INFO'] ) && ( $_SERVER['PATH_INFO'] != $_SERVER['PHP_SELF'] ) )
 		$_SERVER['PHP_SELF'] = str_replace( $_SERVER['PATH_INFO'], '', $_SERVER['PHP_SELF'] );
 
 	$url = dirname( set_url_scheme( 'http://' .  $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'] ) );
@@ -50,9 +43,9 @@ if ( defined( 'RELOCATE' ) && RELOCATE ) { // Move flag is set
 }
 
 //Set a cookie now to see if they are supported by the browser.
-setcookie(TEST_COOKIE, 'WP Cookie check', 0, COOKIEPATH, COOKIE_DOMAIN);
+setcookie( TEST_COOKIE, 'WP Cookie check', 0, COOKIEPATH, COOKIE_DOMAIN );
 if ( SITECOOKIEPATH != COOKIEPATH )
-	setcookie(TEST_COOKIE, 'WP Cookie check', 0, SITECOOKIEPATH, COOKIE_DOMAIN);
+	setcookie( TEST_COOKIE, 'WP Cookie check', 0, SITECOOKIEPATH, COOKIE_DOMAIN );
 
 // allow plugins to override the default actions, and to add extra actions if they want
 do_action( 'login_init' );
