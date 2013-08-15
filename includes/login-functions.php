@@ -342,7 +342,7 @@ function do_login_form() {
 		
 		<!-- Start the actual form -->
 		
-			<?php login_header(__('Log In'), '', $errors); ?>
+			<?php login_header( __('Log In') , '', $errors ); ?>
 			
 			<?php
 		
@@ -471,7 +471,7 @@ function do_login_form() {
  * @param string $message Optional. Message to display in header.
  * @param WP_Error $wp_error Optional. WordPress Error Object
  */
-function login_header($title = 'Log In', $message = '', $wp_error = '') {
+function login_header( $title = 'Log In', $message = '', $wp_error = '' ) {
 	global $error, $interim_login, $current_site, $action;
 
 	// Don't index any of these forms

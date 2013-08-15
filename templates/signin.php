@@ -22,6 +22,8 @@ if ( force_ssl_admin() && ! is_ssl() ) {
 $action = isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'login';
 $errors = new WP_Error();
 
+
+
 if ( isset( $_GET['key'] ) )
 	$action = 'resetpass';
 
@@ -46,6 +48,9 @@ if ( defined( 'RELOCATE' ) && RELOCATE ) { // Move flag is set
 setcookie( TEST_COOKIE, 'WP Cookie check', 0, COOKIEPATH, COOKIE_DOMAIN );
 if ( SITECOOKIEPATH != COOKIEPATH )
 	setcookie( TEST_COOKIE, 'WP Cookie check', 0, SITECOOKIEPATH, COOKIE_DOMAIN );
+
+if ( defined ( 'BSIGN_DEBUG' ) )
+	echo $action;
 
 // allow plugins to override the default actions, and to add extra actions if they want
 do_action( 'login_init' );
