@@ -8,17 +8,17 @@ Plugin Name: Better Signups
 Plugin URI: http://martythornley.com
 Description: An attempt tp improve the signin and registration process.
 Author: Marty Thornley
-Version: .1
+Version: .2
 Author URI: http://martythornley.com
 */
 	
 	/* CONFIG */
 	
-	//define ( 'REDIRECTS_URLS' , true );
+	define ( 'REDIRECTS_URLS' , true );
 
-	//define ( 'REDIRECT_SIGNIN_URLS' , true );
+	define ( 'REDIRECT_SIGNUP_URLS' , true );
 
-	//define ( 'REDIRECT_LOGIN_URLS' , true );
+	define ( 'REDIRECT_LOGIN_URLS' , true );
 
 	//define ( 'BSIGN_DEBUG' , true );
 	
@@ -29,6 +29,10 @@ Author URI: http://martythornley.com
 	if ( !defined ( 'BSIGN_URL' ) ) { define ( 'BSIGN_URL' , $pluginURL ); };
 
 	add_action( 'init' , 'bsign_init' );
+	
+	if ( is_admin() ) {
+		include( trailingslashit( BSIGN_DIR ) . 'includes/login-functions.php' );
+	}
 	
 	/*
 	 * Init actions
@@ -91,6 +95,7 @@ Author URI: http://martythornley.com
 	 * Redirect to our signin page
 	 */
 	function bsign_signin_redirect() {
+		include( trailingslashit( BSIGN_DIR ) . 'includes/login-functions.php' );
 		include( trailingslashit( BSIGN_DIR ) . 'templates/signin.php' );
 		exit;
 	}
