@@ -32,7 +32,16 @@ Author URI: http://martythornley.com
 	    }
 	
 		$last = array_pop( $urlvars );
+				
+		if ( strpos( $_SERVER['REQUEST_URI'] , 'wp-signup.php' ) != false )
+			wp_redirect( home_url( 'signup' ) );
 
+		if ( strpos( $_SERVER['REQUEST_URI'] , 'action=logout' ) != false )
+			wp_redirect( home_url( 'signout' ) );
+
+		if ( strpos( $_SERVER['REQUEST_URI'] , 'wp-login.php' ) != false )
+			wp_redirect( home_url( 'signin' ) );
+		
 		switch ( $last ) {
 			
 			case 'signup' :
