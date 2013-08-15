@@ -14,7 +14,12 @@ Author URI: http://martythornley.com
 	
 	/* CONFIG */
 	
-	//define ( 'USE_STANDARD_WP_URLS' , true );
+	//define ( 'REDIRECTS_URLS' , true );
+
+	//define ( 'REDIRECT_SIGNIN_URLS' , true );
+
+	//define ( 'REDIRECT_LOGIN_URLS' , true );
+
 	//define ( 'BSIGN_DEBUG' , true );
 	
 	if ( !defined ( 'BSIGN_DIR' ) ) { define ( 'BSIGN_DIR', dirname(__FILE__) ); };
@@ -38,31 +43,38 @@ Author URI: http://martythornley.com
 	
 		$last = array_pop( $urlvars );
 		
-		if ( !defined ( 'USE_STANDARD_WP_URLS' ) ) {	
+		if ( defined ( 'REDIRECTS_URLS' ) ) {	
 
-			if ( strpos( $_SERVER['REQUEST_URI'] , 'wp-signup.php' ) != false )
-				wp_redirect( home_url( 'signup' ) );
-	
-			if ( strpos( $_SERVER['REQUEST_URI'] , 'action=logout' ) != false )
-				wp_redirect( home_url( 'signout' ) );
-	
-			if ( strpos( $_SERVER['REQUEST_URI'] , 'wp-login.php' ) != false )
-				wp_redirect( home_url( 'signin' ) );
+			if ( defined ( 'REDIRECT_SIGNUP_URLS' ) ) {	
+				if ( strpos( $_SERVER['REQUEST_URI'] , 'wp-signup.php' ) != false )
+					wp_redirect( home_url( 'signup' ) );
+			}
+			
+			if ( defined ( 'REDIRECT_LOGIN_URLS' ) ) {	
+				if ( strpos( $_SERVER['REQUEST_URI'] , 'action=logout' ) != false )
+					wp_redirect( home_url( 'signout' ) );
 		
+				if ( strpos( $_SERVER['REQUEST_URI'] , 'wp-login.php' ) != false )
+					wp_redirect( home_url( 'signin' ) );
+			}
+			
 			switch ( $last ) {
 				
 				case 'signup' :
-					add_action( 'template_redirect', 'bsign_signup_redirect' );
+					if ( defined ( 'REDIRECT_SIGNUP_URLS' ) )
+						add_action( 'template_redirect', 'bsign_signup_redirect' );
 				break;
 	
 				case 'signin' :
-					add_action( 'template_redirect', 'bsign_signin_redirect' );
+					if ( defined ( 'REDIRECT_LOGIN_URLS' ) )
+						add_action( 'template_redirect', 'bsign_signin_redirect' );
 				break;
 	
 				case 'signout' :
-					add_action( 'template_redirect', 'bsign_signout_redirect' );
+					if ( defined ( 'REDIRECT_LOGIN_URLS' ) )
+						add_action( 'template_redirect', 'bsign_signout_redirect' );
 				break;			
-				
+
 			}
 		}
 	}
