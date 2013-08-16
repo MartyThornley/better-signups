@@ -54,6 +54,7 @@
 	
 	// allow plugins to override the default actions, and to add extra actions if they want
 	do_action( 'login_init' );
-	do_action( 'login_form_' . $action );
+
+	$action = process_login_form( $action );
 	
-	do_login_form();
+	do_login_form( $action );
