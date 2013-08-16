@@ -49,7 +49,7 @@ Author URI: http://martythornley.com
 	 */
 	function bsign_init() {
 		
-		//add_filter( 'logout_url' , 'bsign_logout_url' );
+		add_filter( 'logout_url' , 'bsign_logout_url' );
 		
 	    if ( !empty( $_SERVER['REQUEST_URI'] ) ) {
 			if ( strpos( $_SERVER['REQUEST_URI'] , '?' ) ) {
@@ -91,7 +91,7 @@ Author URI: http://martythornley.com
 				if ( $last == 'signout' )
 					wp_redirect( home_url( 'signout' ) );
 					
-				elseif ( strpos( $_SERVER['REQUEST_URI'] , 'wp-login.php' ) != false )
+				elseif ( strpos( $_SERVER['REQUEST_URI'] , 'wp-login.php' ) != false || $last == 'signin' )
 					wp_redirect( home_url( 'signin' ) );
 					
 			}

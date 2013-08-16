@@ -264,7 +264,7 @@ function do_login_form() {
 		$user = wp_signon('', $secure_cookie);
 	
 		$redirect_to = apply_filters( 'login_redirect', $redirect_to, isset( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : '', $user );
-	
+		
 		if ( !is_wp_error( $user ) && !$reauth ) {
 		
 			if ( $interim_login ) {
@@ -362,7 +362,7 @@ function do_login_form() {
 			$rememberme = ! empty( $_POST['rememberme'] );
 			?>
 		
-			<form name="loginform" id="loginform" action="<?php echo esc_url( site_url( 'wp-login.php', 'login_post' ) ); ?>" method="post">
+			<form name="loginform" id="loginform" action="<?php echo esc_url( site_url( 'signin', 'login_post' ) ); ?>" method="post">
 			
 				<p>
 					<label for="user_login"><?php _e('Username') ?><br />
