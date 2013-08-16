@@ -1,14 +1,14 @@
 <?php
 /**
  * @package Better_Signups
- * @version .2
+ * @version .3
  */
 /*
 Plugin Name: Better Signups
 Plugin URI: http://martythornley.com
 Description: An attempt tp improve the signin and registration process.
 Author: Marty Thornley
-Version: .2
+Version: .3
 Author URI: http://martythornley.com
 */
 	
