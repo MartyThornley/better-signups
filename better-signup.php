@@ -36,6 +36,12 @@ Author URI: http://martythornley.com
 	if ( is_admin() ) {
 		include( trailingslashit( BSIGN_DIR ) . 'includes/login-functions.php' );
 	}
+
+	function bsign_logout_url( $logout_url ) {
+		$logout_url = site_url( 'signout' );
+		$logout_url = wp_nonce_url( $logout_url, 'log-out' );	
+		return $logout_url;
+	}
 	
 	/*
 	 * Init actions
@@ -43,7 +49,7 @@ Author URI: http://martythornley.com
 	 */
 	function bsign_init() {
 		
-
+		//add_filter( 'logout_url' , 'bsign_logout_url' );
 		
 	    if ( !empty( $_SERVER['REQUEST_URI'] ) ) {
 			if ( strpos( $_SERVER['REQUEST_URI'] , '?' ) ) {
