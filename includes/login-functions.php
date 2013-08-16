@@ -5,9 +5,18 @@
  *
  */
 function do_login_form() {
-
+	
+	global $action;
+	
+	//debug
+	if ( defined ( 'BSIGN_DEBUG' ) )
+		_debug_echo( '$action : ' . $action  , __FILE__ , __LINE__ );
+	
 	$http_post = ( 'POST' == $_SERVER['REQUEST_METHOD'] );
 	$interim_login = isset( $_REQUEST['interim-login'] );
+
+	if ( $_GET['checkemail'] == 'registered' )
+		$action = 'login';
 	
 	switch( $action ) {
 	
@@ -42,7 +51,7 @@ function do_login_form() {
 		if ( $http_post ) {
 			$errors = retrieve_password();
 			if ( !is_wp_error( $errors ) ) {
-				$redirect_to = !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : 'wp-login.php?checkemail=confirm';
+				$redirect_to = !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : 'signup?checkemail=confirm';
 				wp_safe_redirect( $redirect_to );
 				exit();
 			}
@@ -156,12 +165,12 @@ function do_login_form() {
 	
 		if ( is_multisite() ) {
 			// Multisite uses wp-signup.php
-			wp_redirect( apply_filters( 'wp_signup_location', network_site_url( 'wp-signup.php' ) ) );
+			wp_redirect( apply_filters( 'wp_signup_location', network_site_url( 'signup?action=register' ) ) );
 			exit;
 		}
 	
 		if ( !get_option('users_can_register') ) {
-			wp_redirect( site_url( 'wp-login.php?registration=disabled' ) );
+			wp_redirect( site_url( 'signup?registration=disabled' ) );
 			exit();
 		}
 	
@@ -172,12 +181,12 @@ function do_login_form() {
 			$user_email = $_POST['user_email'];
 			$errors = register_new_user( $user_login, $user_email );
 			if ( !is_wp_error( $errors ) ) {
-				$redirect_to = !empty( $_POST['redirect_to'] ) ? $_POST['redirect_to'] : 'wp-login.php?checkemail=registered';
+				$redirect_to = !empty( $_POST['redirect_to'] ) ? $_POST['redirect_to'] : 'signup?checkemail=registered';
 				wp_safe_redirect( $redirect_to );
 				exit();
 			}
 		}
-	
+				
 		$redirect_to = apply_filters( 'registration_redirect', !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : '' );
 		?>
 		
@@ -185,7 +194,7 @@ function do_login_form() {
 		
 			<?php login_header( __('Registration Form'), '<p class="message register">' . __('Register For This Site') . '</p>', $errors ); ?>
 			
-			<form name="registerform" id="registerform" action="<?php echo esc_url( site_url('wp-login.php?action=register', 'login_post') ); ?>" method="post">
+			<form name="registerform" id="registerform" action="<?php echo esc_url( site_url('signup?action='.$action , 'login_post') ); ?>" method="post">
 				<p>
 					<label for="user_login"><?php _e('Username') ?><br />
 					<input type="text" name="user_login" id="user_login" class="input" value="<?php echo esc_attr(wp_unslash($user_login)); ?>" size="20" /></label>
@@ -194,7 +203,9 @@ function do_login_form() {
 					<label for="user_email"><?php _e('E-mail') ?><br />
 					<input type="text" name="user_email" id="user_email" class="input" value="<?php echo esc_attr(wp_unslash($user_email)); ?>" size="25" /></label>
 				</p>
-			<?php do_action('register_form'); ?>
+				
+				<?php do_action('register_form'); ?>
+				
 				<p id="reg_passmail"><?php _e('A password will be e-mailed to you.') ?></p>
 				<br class="clear" />
 				<input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_to ); ?>" />
@@ -299,7 +310,7 @@ function do_login_form() {
 			exit();
 			
 		}
-	
+		
 		$errors = $user;
 		// Clear errors if loggedout is set.
 		if ( !empty( $_GET['loggedout'] ) || $reauth )

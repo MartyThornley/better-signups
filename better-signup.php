@@ -21,12 +21,15 @@ Author URI: http://martythornley.com
 	define ( 'REDIRECT_LOGIN_URLS' , true );
 
 	//define ( 'BSIGN_DEBUG' , true );
-	
+		
 	if ( !defined ( 'BSIGN_DIR' ) ) { define ( 'BSIGN_DIR', dirname(__FILE__) ); };
 	
 	$pluginURL = WP_PLUGIN_URL . '/' . str_replace( basename( __FILE__ ) , "" , plugin_basename(__FILE__) );
 	
 	if ( !defined ( 'BSIGN_URL' ) ) { define ( 'BSIGN_URL' , $pluginURL ); };
+	
+	// debug functions
+	include( trailingslashit( BSIGN_DIR ) . 'includes/debug.php' );
 
 	add_action( 'init' , 'bsign_init' );
 	
@@ -41,7 +44,14 @@ Author URI: http://martythornley.com
 	function bsign_init() {
 	
 	    if ( !empty( $_SERVER['REQUEST_URI'] ) ) {
-			$url = trim( $_SERVER['REQUEST_URI'] , '/' );
+			if ( strpos( $_SERVER['REQUEST_URI'] , '?' ) ) {
+				$url = explode( '?' , $_SERVER['REQUEST_URI']);
+				$url = $url[0];
+			} else { 
+				$url = $_SERVER['REQUEST_URI'];
+			}
+			
+			$url = trim( $url , '/' );
 	        $urlvars = explode( '/' , $url );
 	    }
 	
@@ -50,16 +60,26 @@ Author URI: http://martythornley.com
 		if ( defined ( 'REDIRECTS_URLS' ) ) {	
 
 			if ( defined ( 'REDIRECT_SIGNUP_URLS' ) ) {	
+				
+				// skip core wp-signup.php
+				add_action( 'hijack_signup' , function() { exit; } );
+			
 				if ( strpos( $_SERVER['REQUEST_URI'] , 'wp-signup.php' ) != false )
 					wp_redirect( home_url( 'signup' ) );
+			
 			}
 			
 			if ( defined ( 'REDIRECT_LOGIN_URLS' ) ) {	
+				
+				// skip core wp-login.php
+				add_action( 'hijack_login' , function() { exit; } );
+			
 				if ( strpos( $_SERVER['REQUEST_URI'] , 'action=logout' ) != false )
 					wp_redirect( home_url( 'signout' ) );
 		
 				if ( strpos( $_SERVER['REQUEST_URI'] , 'wp-login.php' ) != false )
 					wp_redirect( home_url( 'signin' ) );
+					
 			}
 			
 			switch ( $last ) {
@@ -87,6 +107,10 @@ Author URI: http://martythornley.com
 	 * Redirect to our signup page
 	 */	
 	function bsign_signup_redirect() {
+		
+		global $action;
+		
+		include( trailingslashit( BSIGN_DIR ) . 'includes/signup-functions.php' );
 		include( trailingslashit( BSIGN_DIR ) . 'templates/signup.php' );
 		exit;
 	}
