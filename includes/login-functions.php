@@ -1,5 +1,9 @@
 <?php 
 
+/*
+ * This should process all posted info and figure out what form to load.
+ * Most of it is still buried in do_login_form();
+ */
 function process_login_form( $action = '' ) {
 	
 	//debug
@@ -35,6 +39,22 @@ function process_login_form( $action = '' ) {
 			$redirect_to = !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : 'signin?loggedout=true';
 			wp_safe_redirect( $redirect_to );
 			exit();
+		
+		break;
+		
+		// this should be needed anymore at all
+		// all signups should go through /signup
+		case 'register' :
+				
+			if ( is_multisite() ) {
+				wp_redirect( apply_filters( 'wp_signup_location', network_site_url( 'signup?action=register' ) ) );
+				exit;
+			}
+		
+			if ( !get_option('users_can_register') ) {
+				wp_redirect( site_url( 'signup?registration=disabled' ) );
+				exit();
+			}
 		
 		break;
 		
@@ -166,18 +186,7 @@ function do_login_form( $action = '' ) {
 		break;
 		
 		case 'register' :
-		
-			if ( is_multisite() ) {
-				// Multisite uses wp-signup.php
-				wp_redirect( apply_filters( 'wp_signup_location', network_site_url( 'signup?action=register' ) ) );
-				exit;
-			}
-		
-			if ( !get_option('users_can_register') ) {
-				wp_redirect( site_url( 'signup?registration=disabled' ) );
-				exit();
-			}
-		
+
 			$user_login = '';
 			$user_email = '';
 			if ( $http_post ) {
@@ -460,55 +469,186 @@ function wp_signin_nav() {
 	echo $action;
 	
 	echo '<p id="nav">';
-	
-	//login
-	if ( ! $interim_login ) { ?>
-			
-		<?php if ( ! isset( $_GET['checkemail'] ) || ! in_array( $_GET['checkemail'], array( 'confirm', 'newpass' ) ) ) : ?>
-		
-			<?php if ( get_option( 'users_can_register' ) ) : ?>
-			
-				<?php echo apply_filters( 'register', sprintf( '<a href="%s">%s</a>', esc_url( wp_registration_url() ), __( 'Register' ) ) ); ?> |
 
-			<?php endif; ?>
-			
-			<a href="<?php echo esc_url( wp_lostpassword_url() ); ?>" title="<?php esc_attr_e( 'Password Lost and Found' ); ?>"><?php _e( 'Lost your password?' ); ?></a>
-			
-		<?php endif; ?>
-				
-	<?php }
-	
-	// register
-	?>	
+		?>
+		
 		<a href="<?php echo esc_url( wp_login_url() ); ?>"><?php _e( 'Log in' ); ?></a> |
-		<a href="<?php echo esc_url( wp_lostpassword_url() ); ?>" title="<?php esc_attr_e( 'Password Lost and Found' ) ?>"><?php _e( 'Lost your password?' ); ?></a>
-	<?php
+		
+		<?php
+		
+		//login
+		if ( ! $interim_login ) { ?>
+				
+			<?php if ( ! isset( $_GET['checkemail'] ) || ! in_array( $_GET['checkemail'], array( 'confirm', 'newpass' ) ) ) : ?>
+				
+				<!-- probably do not need this for register page -->
+				<?php if ( get_option( 'users_can_register' ) ) : ?>
+				
+					<?php echo apply_filters( 'register', sprintf( '<a href="%s">%s</a>', esc_url( wp_registration_url() ), __( 'Register' ) ) ); ?> |
 	
-	// rp
-	?>
-		<a href="<?php echo esc_url( wp_login_url() ); ?>"><?php _e( 'Log in' ); ?></a>
-		<?php if ( get_option( 'users_can_register' ) ) : ?>
-	 		| <?php echo apply_filters( 'register', sprintf( '<a href="%s">%s</a>', esc_url( wp_registration_url() ), __( 'Register' ) ) ); ?>
-		<?php endif; ?>
-	<?php
+				<?php endif; ?>
+				
+				<a href="<?php echo esc_url( wp_lostpassword_url() ); ?>" title="<?php esc_attr_e( 'Password Lost and Found' ); ?>"><?php _e( 'Lost your password?' ); ?></a>
+				
+			<?php endif; ?>
+					
+		<?php }
 	
-	// lost password
-	?>
-		<a href="<?php echo esc_url( wp_login_url() ); ?>"><?php _e('Log in') ?></a>
-		<?php if ( get_option( 'users_can_register' ) ) : ?>
-	 		| <?php echo apply_filters( 'register', sprintf( '<a href="%s">%s</a>', esc_url( wp_registration_url() ), __( 'Register' ) ) ); ?>
-		<?php endif; ?>
 	
-	<?php
-	// Don't allow interim logins to navigate away from the page.
-		if ( ! $interim_login ): ?>
-			<p id="backtoblog"><a href="<?php echo esc_url( home_url( '/' ) ); ?>" title="<?php esc_attr_e( 'Are you lost?' ); ?>"><?php printf( __( '&larr; Back to %s' ), get_bloginfo( 'title', 'display' ) ); ?></a></p>
-		<?php endif; ?>
-	
-	<?php
+		// Don't allow interim logins to navigate away from the page.
+			if ( ! $interim_login ): ?>
+				<p id="backtoblog"><a href="<?php echo esc_url( home_url( '/' ) ); ?>" title="<?php esc_attr_e( 'Are you lost?' ); ?>"><?php printf( __( '&larr; Back to %s' ), get_bloginfo( 'title', 'display' ) ); ?></a></p>
+			<?php endif; ?>
+		
+		<?php
 	
 	//end
 	echo '</p>';
+}
+
+function get_login_header( $args ) {
+	
+	global $error, $interim_login, $current_site, $action;
+	
+	$defaults = array(
+		'action'	=> '',
+		'title'		=> '',
+		'message'	=> '',
+		'wp_error'	=> '',
+	);
+	
+	$args = wp_parse_args( $args , $defaults );
+	
+	add_action( 'login_head', 'wp_no_robots' );
+
+	if ( empty($wp_error) )
+		$wp_error = new WP_Error();
+
+	// Shake it!
+	$shake_error_codes = array( 'empty_password', 'empty_email', 'invalid_email', 'invalidcombo', 'empty_username', 'invalid_username', 'incorrect_password' );
+	$shake_error_codes = apply_filters( 'shake_error_codes', $shake_error_codes );
+	
+	if ( $shake_error_codes && $wp_error->get_error_code() && in_array( $wp_error->get_error_code(), $shake_error_codes ) )
+		add_action( 'login_head', 'wp_shake_js', 12 );
+				
+	login_header( $title , $message , $wp_error );
+	
+}
+
+function signin_header_link() {
+	if ( is_multisite() ) {
+		$signin_header_link   = network_home_url();
+	} else {
+		$signin_header_link   = __( 'http://wordpress.org/' );
+	}
+
+	$signin_header_link   = apply_filters( 'login_headerurl', $signin_header_link );
+	$signin_header_link   = apply_filters( 'signin_header_link', $signin_header_link );
+
+	return $signin_header_link;
+
+}
+
+function signin_header_title() {
+	if ( is_multisite() ) {
+		$signin_header_title = $current_site->site_name;
+	} else {
+		$signin_header_title = __( 'Powered by WordPress' );
+	}
+
+	$signin_header_title = apply_filters( 'login_headertitle', $signin_header_title );
+	$signin_header_title = apply_filters( 'signin_header_link', $signin_header_title );
+	
+	return $signin_header_title;
+}
+
+function signin_classes() {
+	global $action, $interim_login;
+	
+	$classes = array( 'login-action-' . $action, 'wp-core-ui' );
+	
+	if ( wp_is_mobile() )
+		$classes[] = 'mobile';
+	if ( is_rtl() )
+		$classes[] = 'rtl';
+	if ( $interim_login ) {
+		$classes[] = 'interim-login';
+		?>
+		<style type="text/css">html{background-color: transparent;}</style>
+		<?php
+
+		if ( 'success' ===  $interim_login )
+			$classes[] = 'interim-login-success';
+	}
+
+	$classes = apply_filters( 'login_body_class', $classes, $action );	
+	
+	$classes = esc_attr( implode( ' ', $classes ) );
+	
+	return $classes;
+}
+
+/*
+ * Determines and echoes messages
+ */
+function signin_messages() {
+	global $message, $action;
+	
+	$message = apply_filters('login_message', $message);
+
+	do_action( 'signin_messages' , $message, $action );
+	
+	if ( !empty( $message ) )
+		echo $message . "\n";
+		
+
+}
+
+/*
+ * Determines and echoes errors
+ */
+function signin_errors() {
+	global $error, $wp_error;
+	
+	// In case a plugin uses $error rather than the $wp_errors object
+	if ( !empty( $error ) ) {
+		$wp_error->add('error', $error);
+		unset($error);
+	}
+
+	if ( ! empty( $wp_error ) && $wp_error->get_error_code() ) {
+		$errors = '';
+		$messages = '';
+		foreach ( $wp_error->get_error_codes() as $code ) {
+			$severity = $wp_error->get_error_data($code);
+			foreach ( $wp_error->get_error_messages($code) as $error ) {
+				if ( 'message' == $severity )
+					$messages .= '	' . $error . "<br />\n";
+				else
+					$errors .= '	' . $error . "<br />\n";
+			}
+		}
+		if ( !empty($errors) )
+			echo '<div id="login_error">' . apply_filters('login_errors', $errors) . "</div>\n";
+		if ( !empty($messages) )
+			echo '<p class="message">' . apply_filters('login_messages', $messages) . "</p>\n";
+	}
+}
+
+/*
+ * Finds a template file
+ * First looks in child theme, then theme, then plugin
+ */
+function get_signin_template( $template ) {
+	global $wp_error;
+	$template = $template .'.php';
+
+	if ( file_exists( trailingslashit( get_stylesheet_directory() ) . $template ) )
+		include( trailingslashit( get_stylesheet_directory() ) . $template );
+	elseif ( file_exists( trailingslashit( get_template_directory() ) . $template ) )
+		include( trailingslashit( get_template_directory() ) . $template );
+	else
+		include( BSIGN_DIR . '/templates/'. $template );
 }
 
 /**
@@ -528,114 +668,10 @@ function wp_signin_nav() {
  * @param WP_Error $wp_error Optional. WordPress Error Object
  */
 function login_header( $title = 'Log In', $message = '', $wp_error = '' ) {
-	global $error, $interim_login, $current_site, $action;
+	global $error, $interim_login, $current_site, $action, $shake_error_codes, $wp_error;
 
-	// Don't index any of these forms
-	add_action( 'login_head', 'wp_no_robots' );
-
-	if ( empty($wp_error) )
-		$wp_error = new WP_Error();
-
-	// Shake it!
-	$shake_error_codes = array( 'empty_password', 'empty_email', 'invalid_email', 'invalidcombo', 'empty_username', 'invalid_username', 'incorrect_password' );
-	$shake_error_codes = apply_filters( 'shake_error_codes', $shake_error_codes );
-
-	if ( $shake_error_codes && $wp_error->get_error_code() && in_array( $wp_error->get_error_code(), $shake_error_codes ) )
-		add_action( 'login_head', 'wp_shake_js', 12 );
-
-	?>
-	<!DOCTYPE html>
-	<html xmlns="http://www.w3.org/1999/xhtml" <?php language_attributes(); ?>>
-	<head>
-	<meta http-equiv="Content-Type" content="<?php bloginfo('html_type'); ?>; charset=<?php bloginfo('charset'); ?>" />
-	<title><?php bloginfo('name'); ?> &rsaquo; <?php echo $title; ?></title>
-	<?php
-
-	wp_admin_css( 'wp-admin', true );
-	wp_admin_css( 'colors-fresh', true );
-
-	if ( wp_is_mobile() ) { ?>
-		<meta name="viewport" content="width=320, initial-scale=0.9, maximum-scale=1.0, user-scalable=0" /><?php
-	}
-
-	// Remove all stored post data on logging out.
-	// This could be added by add_action('login_head'...) like wp_shake_js()
-	// but maybe better if it's not removable by plugins
-	if ( 'loggedout' == $wp_error->get_error_code() ) {
-		?>
-		<script>if("sessionStorage" in window){try{for(var key in sessionStorage){if(key.indexOf("wp-autosave-")!=-1){sessionStorage.removeItem(key)}}}catch(e){}};</script>
-		<?php
-	}
-
-	do_action( 'login_enqueue_scripts' );
-	do_action( 'login_head' );
-
-	if ( is_multisite() ) {
-		$login_header_url   = network_home_url();
-		$login_header_title = $current_site->site_name;
-	} else {
-		$login_header_url   = __( 'http://wordpress.org/' );
-		$login_header_title = __( 'Powered by WordPress' );
-	}
-
-	$login_header_url   = apply_filters( 'login_headerurl',   $login_header_url   );
-	$login_header_title = apply_filters( 'login_headertitle', $login_header_title );
-
-	$classes = array( 'login-action-' . $action, 'wp-core-ui' );
-	if ( wp_is_mobile() )
-		$classes[] = 'mobile';
-	if ( is_rtl() )
-		$classes[] = 'rtl';
-	if ( $interim_login ) {
-		$classes[] = 'interim-login';
-		?>
-		<style type="text/css">html{background-color: transparent;}</style>
-		<?php
-
-		if ( 'success' ===  $interim_login )
-			$classes[] = 'interim-login-success';
-	}
-
-	$classes = apply_filters( 'login_body_class', $classes, $action );
-
-	?>
-	</head>
+	get_signin_template( 'signin-header' );
 	
-	<body class="login <?php echo esc_attr( implode( ' ', $classes ) ); ?>">
-		
-		<div id="login">
-			<h1><a href="<?php echo esc_url( $login_header_url ); ?>" title="<?php echo esc_attr( $login_header_title ); ?>"><?php bloginfo( 'name' ); ?></a></h1>
-	<?php
-
-	unset( $login_header_url, $login_header_title );
-
-	$message = apply_filters('login_message', $message);
-	if ( !empty( $message ) )
-		echo $message . "\n";
-
-	// In case a plugin uses $error rather than the $wp_errors object
-	if ( !empty( $error ) ) {
-		$wp_error->add('error', $error);
-		unset($error);
-	}
-
-	if ( $wp_error->get_error_code() ) {
-		$errors = '';
-		$messages = '';
-		foreach ( $wp_error->get_error_codes() as $code ) {
-			$severity = $wp_error->get_error_data($code);
-			foreach ( $wp_error->get_error_messages($code) as $error ) {
-				if ( 'message' == $severity )
-					$messages .= '	' . $error . "<br />\n";
-				else
-					$errors .= '	' . $error . "<br />\n";
-			}
-		}
-		if ( !empty($errors) )
-			echo '<div id="login_error">' . apply_filters('login_errors', $errors) . "</div>\n";
-		if ( !empty($messages) )
-			echo '<p class="message">' . apply_filters('login_messages', $messages) . "</p>\n";
-	}
 } // End of login_header()
 
 /**
@@ -643,28 +679,11 @@ function login_header( $title = 'Log In', $message = '', $wp_error = '' ) {
  *
  * @param string $input_id Which input to auto-focus
  */
-function login_footer($input_id = '') {
+function login_footer( $input_id = '' ) {
 	global $interim_login;
 	
-			echo '</div>';
-			
-			if ( !empty($input_id) ) : ?>
+	get_signin_template( 'signin-footer' );
 
-				<script type="text/javascript">
-				try{document.getElementById('<?php echo $input_id; ?>').focus();}catch(e){}
-				if(typeof wpOnload=='function')wpOnload();
-				</script>
-
-			<?php endif; ?>
-
-			<?php do_action('login_footer'); ?>
-		
-			<div class="clear"></div>
-		
-		</body>
-	</html>
-	
-	<?php
 }
 
 function wp_shake_js() {
