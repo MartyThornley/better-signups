@@ -42,11 +42,14 @@ Author URI: http://martythornley.com
 	 * Parses url to figure out where we should redirect
 	 */
 	function bsign_init() {
-	
+		
+
+		
 	    if ( !empty( $_SERVER['REQUEST_URI'] ) ) {
 			if ( strpos( $_SERVER['REQUEST_URI'] , '?' ) ) {
-				$url = explode( '?' , $_SERVER['REQUEST_URI']);
-				$url = $url[0];
+				$url_array = explode( '?' , $_SERVER['REQUEST_URI']);
+				$url = $url_array[0];
+				$vars = $url_array[1];
 			} else { 
 				$url = $_SERVER['REQUEST_URI'];
 			}
@@ -54,8 +57,13 @@ Author URI: http://martythornley.com
 			$url = trim( $url , '/' );
 	        $urlvars = explode( '/' , $url );
 	    }
-	
+
 		$last = array_pop( $urlvars );
+
+		if ( isset( $vars ) && strpos( $vars , 'logout' ) != false )
+			$last = 'signout';
+		
+		
 		
 		if ( defined ( 'REDIRECTS_URLS' ) ) {	
 
@@ -73,11 +81,11 @@ Author URI: http://martythornley.com
 				
 				// skip core wp-login.php
 				add_action( 'hijack_login' , function() { exit; } );
-			
-				if ( strpos( $_SERVER['REQUEST_URI'] , 'action=logout' ) != false )
+
+				if ( $last == 'signout' )
 					wp_redirect( home_url( 'signout' ) );
-		
-				if ( strpos( $_SERVER['REQUEST_URI'] , 'wp-login.php' ) != false )
+					
+				elseif ( strpos( $_SERVER['REQUEST_URI'] , 'wp-login.php' ) != false )
 					wp_redirect( home_url( 'signin' ) );
 					
 			}
@@ -90,11 +98,19 @@ Author URI: http://martythornley.com
 				break;
 	
 				case 'signin' :
+					if ( is_user_logged_in() ) {
+						wp_redirect( admin_url() );
+						exit;
+					}
 					if ( defined ( 'REDIRECT_LOGIN_URLS' ) )
 						add_action( 'template_redirect', 'bsign_signin_redirect' );
 				break;
 	
 				case 'signout' :
+					if ( !is_user_logged_in() ) {
+						wp_redirect( site_url() );
+						exit;
+					}
 					if ( defined ( 'REDIRECT_LOGIN_URLS' ) )
 						add_action( 'template_redirect', 'bsign_signout_redirect' );
 				break;			

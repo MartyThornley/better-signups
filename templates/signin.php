@@ -7,7 +7,7 @@
  *
  * @package WordPress
  */
-	
+			
 	// Redirect to https login if forced to use SSL
 	if ( force_ssl_admin() && ! is_ssl() ) {
 		if ( 0 === strpos($_SERVER['REQUEST_URI'], 'http') ) {
@@ -18,7 +18,7 @@
 			exit();
 		}
 	}
-	
+
 	$action = isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'login';
 	$errors = new WP_Error();
 	
