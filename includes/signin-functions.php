@@ -4,11 +4,23 @@
  * This should process all posted info and figure out what form to load.
  * Most of it is still buried in do_login_form();
  */
-function process_login_form( $action = '' ) {
+function process_login_form() {
+
+	$action = isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'login';
+	$errors = new WP_Error();
+	
+	if ( isset( $_GET['key'] ) )
+		$action = 'resetpass';
+	
+	$signin_actions = array( 'postpass', 'logout', 'lostpassword', 'retrievepassword', 'resetpass', 'rp', 'register', 'login' );
+	
+	// validate action so as to default to the login screen
+	if ( !in_array( $action , $signin_actions , true ) && false === has_filter( 'login_form_' . $action ) )
+		$action = 'login';
 	
 	//debug
 	if ( defined ( 'BSIGN_DEBUG' ) )
-		_debug_echo( '$action : ' . $action  , __FILE__ , __LINE__ );
+		_debug_echo( '$action : ' . $action , __FILE__ , __LINE__ );	
 	
 	$http_post = ( 'POST' == $_SERVER['REQUEST_METHOD'] );
 	$interim_login = isset( $_REQUEST['interim-login'] );
@@ -68,9 +80,9 @@ function process_login_form( $action = '' ) {
  * Determines what we are trying to do and outputs the login/logout/password reset forms.
  *
  */
-function do_login_form( $action = '' ) {
+function do_login_form() {
 	
-	do_action( 'login_form_' . $action );
+	global $action;
 	
 	//debug
 	if ( defined ( 'BSIGN_DEBUG' ) )
@@ -272,7 +284,7 @@ function do_login_form( $action = '' ) {
 				$secure_cookie = false;
 		
 			$user = wp_signon('', $secure_cookie);
-		
+			
 			$redirect_to = apply_filters( 'login_redirect', $redirect_to, isset( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : '', $user );
 			
 			if ( !is_wp_error( $user ) && !$reauth ) {
@@ -506,9 +518,13 @@ function wp_signin_nav() {
 	echo '</p>';
 }
 
+/*
+ * Should get proper login header
+ * Does not do anything yet
+ */
 function get_login_header( $args ) {
 	
-	global $error, $interim_login, $current_site, $action;
+	global $error, $interim_login, $current_site, $action, $wp_error, $shake_error_codes;
 	
 	$defaults = array(
 		'action'	=> '',
@@ -608,13 +624,8 @@ function signin_messages() {
  * Determines and echoes errors
  */
 function signin_errors() {
-	global $error, $wp_error;
 	
-	// In case a plugin uses $error rather than the $wp_errors object
-	if ( !empty( $error ) ) {
-		$wp_error->add('error', $error);
-		unset($error);
-	}
+	$wp_error = $GLOBALS['singin_errors'];
 
 	if ( ! empty( $wp_error ) && $wp_error->get_error_code() ) {
 		$errors = '';
@@ -668,8 +679,8 @@ function get_signin_template( $template ) {
  * @param WP_Error $wp_error Optional. WordPress Error Object
  */
 function login_header( $title = 'Log In', $message = '', $wp_error = '' ) {
-	global $error, $interim_login, $current_site, $action, $shake_error_codes, $wp_error;
-
+	global $error, $interim_login, $current_site, $action, $shake_error_codes;
+	$GLOBALS['singin_errors'] = $wp_error;
 	get_signin_template( 'signin-header' );
 	
 } // End of login_header()
