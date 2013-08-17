@@ -7,7 +7,7 @@
  *
  * @package WordPress
  */
-			
+	
 	// Redirect to https login if forced to use SSL
 	if ( force_ssl_admin() && ! is_ssl() ) {
 		if ( 0 === strpos($_SERVER['REQUEST_URI'], 'http') ) {
@@ -19,17 +19,6 @@
 		}
 	}
 
-	$action = isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'login';
-	$errors = new WP_Error();
-	
-	
-	if ( isset( $_GET['key'] ) )
-		$action = 'resetpass';
-	
-	// validate action so as to default to the login screen
-	if ( !in_array( $action, array( 'postpass', 'logout', 'lostpassword', 'retrievepassword', 'resetpass', 'rp', 'register', 'login' ), true ) && false === has_filter( 'login_form_' . $action ) )
-		$action = 'login';
-	
 	nocache_headers();
 	
 	header('Content-Type: '.get_bloginfo( 'html_type' ).'; charset='.get_bloginfo( 'charset' ) );
@@ -47,10 +36,22 @@
 	setcookie( TEST_COOKIE, 'WP Cookie check', 0, COOKIEPATH, COOKIE_DOMAIN );
 	if ( SITECOOKIEPATH != COOKIEPATH )
 		setcookie( TEST_COOKIE, 'WP Cookie check', 0, SITECOOKIEPATH, COOKIE_DOMAIN );
+
+	$action = isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'login';
+	$errors = new WP_Error();
+	
+	if ( isset( $_GET['key'] ) )
+		$action = 'resetpass';
+	
+	// validate action so as to default to the login screen
+	if ( !in_array( $action, array( 'postpass', 'logout', 'lostpassword', 'retrievepassword', 'resetpass', 'rp', 'register', 'login' ), true ) && false === has_filter( 'login_form_' . $action ) )
+		$action = 'login';
 	
 	//debug
 	if ( defined ( 'BSIGN_DEBUG' ) )
 		_debug_echo( '$action : ' . $action , __FILE__ , __LINE__ );
+	
+	set_current_screen( 'signin' );
 	
 	// allow plugins to override the default actions, and to add extra actions if they want
 	do_action( 'login_init' );

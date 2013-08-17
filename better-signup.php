@@ -12,7 +12,7 @@ Version: .4
 Author URI: http://martythornley.com
 */
 	
-	/* CONFIG */
+	/** CONFIG **/
 	
 	define ( 'REDIRECTS_URLS' , true );
 
@@ -21,6 +21,8 @@ Author URI: http://martythornley.com
 	define ( 'REDIRECT_LOGIN_URLS' , true );
 
 	//define ( 'BSIGN_DEBUG' , true );
+	
+	/** End CONFIG **/
 		
 	if ( !defined ( 'BSIGN_DIR' ) ) { define ( 'BSIGN_DIR', dirname(__FILE__) ); };
 	
@@ -28,13 +30,16 @@ Author URI: http://martythornley.com
 	
 	if ( !defined ( 'BSIGN_URL' ) ) { define ( 'BSIGN_URL' , $pluginURL ); };
 	
-	// debug functions
+	/** temporary debug functions */
 	include( trailingslashit( BSIGN_DIR ) . 'includes/debug.php' );
-
-	add_action( 'init' , 'bsign_init' );
 	
+	/** WordPress Administration Screen API */
+	require_once(ABSPATH . 'wp-admin/includes/screen.php');
+	
+	add_action( 'init' , 'bsign_init' );
+
 	if ( is_admin() ) {
-		include( trailingslashit( BSIGN_DIR ) . 'includes/login-functions.php' );
+		include( trailingslashit( BSIGN_DIR ) . 'includes/signin-functions.php' );
 	}
 
 	function bsign_logout_url( $logout_url ) {
@@ -68,8 +73,6 @@ Author URI: http://martythornley.com
 
 		if ( isset( $vars ) && strpos( $vars , 'logout' ) != false )
 			$last = 'signout';
-		
-		
 		
 		if ( defined ( 'REDIRECTS_URLS' ) ) {	
 
@@ -133,7 +136,7 @@ Author URI: http://martythornley.com
 		global $action;
 		
 		include( trailingslashit( BSIGN_DIR ) . 'includes/signup-functions.php' );
-		include( trailingslashit( BSIGN_DIR ) . 'templates/signup.php' );
+		include( trailingslashit( BSIGN_DIR ) . 'includes/signup.php' );
 		exit;
 	}
 
@@ -141,8 +144,8 @@ Author URI: http://martythornley.com
 	 * Redirect to our signin page
 	 */
 	function bsign_signin_redirect() {
-		include( trailingslashit( BSIGN_DIR ) . 'includes/login-functions.php' );
-		include( trailingslashit( BSIGN_DIR ) . 'templates/signin.php' );
+		include( trailingslashit( BSIGN_DIR ) . 'includes/signin-functions.php' );
+		include( trailingslashit( BSIGN_DIR ) . 'includes/signin.php' );
 		exit;
 	}
 
@@ -150,6 +153,6 @@ Author URI: http://martythornley.com
 	 * Redirect to our signout page
 	 */
 	function bsign_signout_redirect() {
-		include( trailingslashit( BSIGN_DIR ) . 'templates/signout.php' );
+		include( trailingslashit( BSIGN_DIR ) . 'includes/signout.php' );
 		exit;
 	}
