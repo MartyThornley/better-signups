@@ -6,6 +6,6 @@
 
 	wp_logout();
 	
-	$redirect_to = !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : 'signin';
+	$redirect_to = !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : 'signin' . bsign_get_query_string( $_SERVER['REQUEST_URI'] );
 	wp_safe_redirect( $redirect_to );
 	exit();

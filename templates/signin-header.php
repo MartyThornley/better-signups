@@ -1,9 +1,9 @@
 <?php
 /*
- * Signin Header
+ * Signin Page Header
  */
 ?>
-	<!DOCTYPE html>
+<!DOCTYPE html>
 	<html xmlns="http://www.w3.org/1999/xhtml" <?php language_attributes(); ?>>
 	<head>
 	<meta http-equiv="Content-Type" content="<?php bloginfo('html_type'); ?>; charset=<?php bloginfo('charset'); ?>" />
@@ -19,7 +19,6 @@
 	if ( wp_is_mobile() ) { ?>
 		<meta name="viewport" content="width=320, initial-scale=0.9, maximum-scale=1.0, user-scalable=0" /><?php
 	}
-	
 	
 	// Remove all stored post data on logging out.
 	// This could be added by add_action('login_head'...) like wp_shake_js()

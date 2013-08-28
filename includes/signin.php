@@ -1,6 +1,6 @@
 <?php
 /**
- * WordPress User Page
+ * WordPress Signin Page
  *
  * Handles authentication, registering, resetting passwords, forgot password,
  * and other user handling.
@@ -42,7 +42,7 @@
 	do_action( 'login_init' );
 
 	$action = process_login_form();
-	
+
 	do_action( 'login_form_' . $action );
 	
 	do_login_form( $action );

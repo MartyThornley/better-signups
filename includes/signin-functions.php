@@ -12,7 +12,7 @@ function process_login_form() {
 	if ( isset( $_GET['key'] ) )
 		$action = 'resetpass';
 	
-	$signin_actions = array( 'postpass', 'logout', 'lostpassword', 'retrievepassword', 'resetpass', 'rp', 'register', 'login' );
+	$signin_actions = array( 'postpass', 'logout', 'loggedout' , 'lostpassword', 'retrievepassword', 'resetpass', 'rp', 'register', 'login' );
 	
 	// validate action so as to default to the login screen
 	if ( !in_array( $action , $signin_actions , true ) && false === has_filter( 'login_form_' . $action ) )
@@ -27,7 +27,7 @@ function process_login_form() {
 
 	if ( $_GET['checkemail'] == 'registered' )
 		$action = 'login';
-	
+
 	switch( $action ) {
 		
 		case 'postpass' :
@@ -80,10 +80,8 @@ function process_login_form() {
  * Determines what we are trying to do and outputs the login/logout/password reset forms.
  *
  */
-function do_login_form() {
-	
-	global $action;
-	
+function do_login_form( $action = '' ) {
+
 	//debug
 	if ( defined ( 'BSIGN_DEBUG' ) )
 		_debug_echo( '$action : ' . $action  , __FILE__ , __LINE__ );
@@ -105,9 +103,7 @@ function do_login_form() {
 			$redirect_to = apply_filters( 'lostpassword_redirect', !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : '' );
 			
 			?>
-			
-			<!-- Start the actual form -->
-			
+
 				<?php do_action( 'lost_password' ); ?>
 				
 				<?php login_header(__( 'Lost Password' ), '<p class="message">' . __( 'Please enter your username or email address. You will receive a link to create a new password via email.' ) . '</p>', $errors ); ?>
@@ -129,8 +125,6 @@ function do_login_form() {
 				<?php wp_signin_nav(); ?>
 
 				<?php login_footer( 'user_login' ); ?>
-				
-			<!-- Start the actual form -->
 			
 			<?php
 		break;
@@ -165,7 +159,7 @@ function do_login_form() {
 		
 			?>
 			
-			<!-- Start the actual form -->
+			<?php /*** Start Form ***/ ?>
 			
 				<?php login_header( __('Reset Password'), '<p class="message reset-pass">' . __('Enter your new password below.') . '</p>', $errors ); ?>
 				
@@ -192,7 +186,7 @@ function do_login_form() {
 								
 				<?php login_footer( 'user_pass' ); ?>
 				
-			<!-- End the actual form -->
+			<?php /*** End Form ***/ ?>
 			
 			<?php
 		break;
@@ -215,7 +209,7 @@ function do_login_form() {
 			$redirect_to = apply_filters( 'registration_redirect', !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : '' );
 			?>
 			
-			<!-- Start the actual form -->
+			<?php /*** Start Form ***/ ?>
 			
 				<?php login_header( __('Registration Form'), '<p class="message register">' . __('Register For This Site') . '</p>', $errors ); ?>
 				
@@ -241,7 +235,7 @@ function do_login_form() {
 
 				<?php login_footer( 'user_login' ); ?>
 				
-			<!-- End the actual form -->
+			<?php /*** End Form ***/ ?>
 			
 			<?php
 		break;
@@ -295,7 +289,7 @@ function do_login_form() {
 					$interim_login = 'success';
 					?>
 	
-					<!-- Start the actual form -->
+					<?php /*** Start Form ***/ ?>
 	
 						<?php login_header( '', $message ); ?>
 						</div>
@@ -306,7 +300,7 @@ function do_login_form() {
 							<script type="text/javascript">setTimeout( function(){ new wp.customize.Messenger({ url: '<?php echo wp_customize_url(); ?>', channel: 'login' }).send('login') }, 1000 );</script>
 						<?php endif; ?>
 		
-					<!-- End the actual form -->
+					<?php /*** End Form ***/ ?>
 					
 					</body></html>
 					
@@ -373,7 +367,7 @@ function do_login_form() {
 				wp_clear_auth_cookie();
 			?>
 			
-			<!-- Start the actual form -->
+			<?php /*** Start Form ***/ ?>
 			
 				<?php login_header( __('Log In') , '', $errors ); ?>
 				
@@ -464,7 +458,7 @@ function do_login_form() {
 		
 			<?php login_footer(); ?>
 			
-			<!-- End the actual form -->
+			<?php /*** End Form ***/ ?>
 			
 			<?php
 		break;
@@ -682,7 +676,6 @@ function login_header( $title = 'Log In', $message = '', $wp_error = '' ) {
 	global $error, $interim_login, $current_site, $action, $shake_error_codes;
 	$GLOBALS['singin_errors'] = $wp_error;
 	get_signin_template( 'signin-header' );
-	
 } // End of login_header()
 
 /**

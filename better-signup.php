@@ -37,15 +37,36 @@ Author URI: http://martythornley.com
 	require_once(ABSPATH . 'wp-admin/includes/screen.php');
 	
 	add_action( 'init' , 'bsign_init' );
-
+	
+	/*
+	 * Probably a better way to include files depending on where they end up
+	 */
 	if ( is_admin() ) {
 		include( trailingslashit( BSIGN_DIR ) . 'includes/signin-functions.php' );
 	}
 
+	/*
+	 * Filters the logout url
+	 * Probably temporary if we end up redefining in core
+	 */
 	function bsign_logout_url( $logout_url ) {
-		$logout_url = site_url( 'signout' );
+		$var_string = bsign_get_query_string( $logout_url );
+		$logout_url = site_url( 'signout' . $var_string );
 		$logout_url = wp_nonce_url( $logout_url, 'log-out' );	
 		return $logout_url;
+	}
+	
+	/*
+	 * Find and return the query string
+	 * returns empty string if none is found
+	 */
+	function bsign_get_query_string( $url ){
+		$var_string = '';
+		if ( strpos( $url , '?' ) )
+			$url_array = explode( '?' , $url);
+		if ( isset( $url_array[1] ) )
+			$var_string = '?'.$url_array[1];
+		return $var_string;	
 	}
 	
 	/*
@@ -70,7 +91,7 @@ Author URI: http://martythornley.com
 	    }
 
 		$last = array_pop( $urlvars );
-
+		
 		if ( isset( $vars ) && strpos( $vars , 'logout' ) != false )
 			$last = 'signout';
 		
@@ -79,7 +100,7 @@ Author URI: http://martythornley.com
 			if ( defined ( 'REDIRECT_SIGNUP_URLS' ) ) {	
 				
 				// skip core wp-signup.php
-				add_action( 'hijack_signup' , function() { exit; } );
+				add_action( 'hijack_signup' , 'bsign_exit' );
 			
 				if ( strpos( $_SERVER['REQUEST_URI'] , 'wp-signup.php' ) != false )
 					wp_redirect( home_url( 'signup' ) );
@@ -89,10 +110,11 @@ Author URI: http://martythornley.com
 			if ( defined ( 'REDIRECT_LOGIN_URLS' ) ) {	
 				
 				// skip core wp-login.php
-				add_action( 'hijack_login' , function() { exit; } );
+				// seems to work with or without this??
+				// add_action( 'hijack_login' , 'bsign_exit' );
 
 				if ( $last == 'signout' )
-					wp_redirect( home_url( 'signout' ) );
+					wp_redirect( home_url( 'signout' . bsign_get_query_string( $_SERVER['REQUEST_URI'] ) ) );
 					
 				elseif ( strpos( $_SERVER['REQUEST_URI'] , 'wp-login.php' ) != false || $last == 'signin' )
 					wp_redirect( home_url( 'signin' ) );
@@ -117,7 +139,7 @@ Author URI: http://martythornley.com
 	
 				case 'signout' :
 					if ( !is_user_logged_in() ) {
-						wp_redirect( site_url() );
+						wp_redirect( home_url( 'signin?loggedout=true' ) );
 						exit;
 					}
 					if ( defined ( 'REDIRECT_LOGIN_URLS' ) )
@@ -127,7 +149,14 @@ Author URI: http://martythornley.com
 			}
 		}
 	}
-
+	/*
+	 * Simple funciton to exit
+	 * replaces annomymous functions which did not seem to work in some cases
+	 *
+	 */
+	function bsign_exit (){
+		exit;
+	}
 	/*
 	 * Redirect to our signup page
 	 */	
