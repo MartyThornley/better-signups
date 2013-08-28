@@ -32,7 +32,7 @@
 
 	do_action( 'login_enqueue_scripts' );
 	do_action( 'login_head' );
-
+		
 	?>
 	</head>
 	
@@ -46,3 +46,4 @@
 			<?php signin_messages(); ?>
 			
 			<?php signin_errors(); ?>
+		

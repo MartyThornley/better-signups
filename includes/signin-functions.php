@@ -23,7 +23,7 @@ function process_login_form() {
 		_debug_echo( '$action : ' . $action , __FILE__ , __LINE__ );	
 	
 	$http_post = ( 'POST' == $_SERVER['REQUEST_METHOD'] );
-	$interim_login = isset( $_REQUEST['interim-login'] );
+	
 
 	if ( $_GET['checkemail'] == 'registered' )
 		$action = 'login';
@@ -191,6 +191,7 @@ function do_login_form( $action = '' ) {
 			<?php
 		break;
 		
+		// this should go through /signup now
 		case 'register' :
 
 			$user_login = '';
@@ -292,9 +293,8 @@ function do_login_form( $action = '' ) {
 					<?php /*** Start Form ***/ ?>
 	
 						<?php login_header( '', $message ); ?>
-						</div>
+						
 						<?php do_action( 'login_footer' ); ?>
-				
 									
 						<?php if ( $customize_login ) : ?>
 							<script type="text/javascript">setTimeout( function(){ new wp.customize.Messenger({ url: '<?php echo wp_customize_url(); ?>', channel: 'login' }).send('login') }, 1000 );</script>
@@ -371,90 +371,47 @@ function do_login_form( $action = '' ) {
 			
 				<?php login_header( __('Log In') , '', $errors ); ?>
 				
-				<?php
+					<?php wp_signin_form( 'signin' ); ?>
 			
-				if ( isset($_POST['log']) )
-					$user_login = ( 'incorrect_password' == $errors->get_error_code() || 'empty_password' == $errors->get_error_code() ) ? esc_attr(wp_unslash($_POST['log'])) : '';
-				$rememberme = ! empty( $_POST['rememberme'] );
-				?>
-			
-				<form name="loginform" id="loginform" action="<?php echo esc_url( site_url( 'signin', 'login_post' ) ); ?>" method="post">
-				
-					<p>
-						<label for="user_login"><?php _e('Username') ?><br />
-						<input type="text" name="log" id="user_login" class="input" value="<?php echo esc_attr($user_login); ?>" size="20" /></label>
-					</p>
-					<p>
-						<label for="user_pass"><?php _e('Password') ?><br />
-						<input type="password" name="pwd" id="user_pass" class="input" value="" size="20" /></label>
-					</p>
-					
-					<?php do_action('login_form'); ?>
-					
-					<p class="forgetmenot"><label for="rememberme"><input name="rememberme" type="checkbox" id="rememberme" value="forever" <?php checked( $rememberme ); ?> /> <?php esc_attr_e('Remember Me'); ?></label></p>
-					<p class="submit">
-						<input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="<?php esc_attr_e('Log In'); ?>" />
-						<input type="hidden" name="testcookie" value="1" />
-						
-						<?php if ( $interim_login ) { ?>
-						
-							<input type="hidden" name="interim-login" value="1" />
-							
-						<?php } else { ?>
-						
-							<input type="hidden" name="redirect_to" value="<?php echo esc_attr($redirect_to); ?>" />
-					
-						<?php } ?>
-						
-						<?php if ( $customize_login ) : ?>
-						
-							<input type="hidden" name="customize-login" value="1" />
-						
-						<?php endif; ?>
-						
-					</p>
-					
-				</form>
-			
-			<?php wp_signin_nav(); ?>
+					<?php wp_signin_nav(); ?>
 		
-			<script type="text/javascript">
-				function wp_attempt_focus() {
-					setTimeout( function(){ try{
-					<?php if ( $user_login || $interim_login ) { ?>
-					d = document.getElementById('user_pass');
-					d.value = '';
-					<?php } else { ?>
-					d = document.getElementById('user_login');
-					<?php if ( 'invalid_username' == $errors->get_error_code() ) { ?>
-					if( d.value != '' )
-					d.value = '';
-					<?php
-					}
-					}?>
-					d.focus();
-					d.select();
-					} catch(e){}
-					}, 200);
-					}
-					
-					<?php if ( !$error ) { ?>
-					wp_attempt_focus();
-					<?php } ?>
-					if(typeof wpOnload=='function')wpOnload();
-					<?php if ( $interim_login ) { ?>
-					(function(){
-					try {
-						var i, links = document.getElementsByTagName('a');
-						for ( i in links ) {
-							if ( links[i].href )
-								links[i].target = '_blank';
-						}
-					} catch(e){}
-					}());
-					
-				<?php } ?>
-			</script>
+					<script type="text/javascript">
+						function wp_attempt_focus() {
+							setTimeout( function(){ try{
+							<?php if ( $user_login || $interim_login ) { ?>
+							d = document.getElementById('user_pass');
+							d.value = '';
+							<?php } else { ?>
+							d = document.getElementById('user_login');
+							<?php if ( 'invalid_username' == $errors->get_error_code() ) { ?>
+							if( d.value != '' )
+							d.value = '';
+							<?php
+							}
+							}?>
+							d.focus();
+							d.select();
+							} catch(e){}
+							}, 200);
+							}
+							
+							<?php if ( !$error ) { ?>
+							wp_attempt_focus();
+							<?php } ?>
+							if(typeof wpOnload=='function')wpOnload();
+							<?php if ( $interim_login ) { ?>
+							(function(){
+							try {
+								var i, links = document.getElementsByTagName('a');
+								for ( i in links ) {
+									if ( links[i].href )
+										links[i].target = '_blank';
+								}
+							} catch(e){}
+							}());
+							
+						<?php } ?>
+					</script>
 		
 			<?php login_footer(); ?>
 			
@@ -464,6 +421,72 @@ function do_login_form( $action = '' ) {
 		break;
 		
 	} // end action switch
+}
+
+/* 
+ * New function to put all login and out forms into one
+ */
+function wp_signin_form( $form='' ) {
+	
+	switch ( $form ) {
+	
+		case 'signin' :
+			 
+			if ( isset( $_POST['log'] ) )
+				$user_login = ( 'incorrect_password' == $errors->get_error_code() || 'empty_password' == $errors->get_error_code() ) ? esc_attr( wp_unslash( $_POST['log'] ) ) : '';
+		
+			$rememberme = ! empty( $_POST['rememberme'] );
+		
+			// not exactly sure how this is used but keeping it for now
+			$interim_login = isset( $_REQUEST['interim-login'] ); 
+		
+			?>
+		
+			<form name="signform" id="signform" action="<?php echo esc_url( site_url( 'signin', 'login_post' ) ); ?>" method="post">
+			
+				<p>
+					<label for="user_login"><?php _e('Username') ?><br />
+					<input type="text" name="log" id="user_login" class="input" value="<?php echo esc_attr( $user_login ); ?>" size="20" /></label>
+				</p>
+				<p>
+					<label for="user_pass"><?php _e('Password') ?><br />
+					<input type="password" name="pwd" id="user_pass" class="input" value="" size="20" /></label>
+				</p>
+				
+				<?php do_action('login_form'); ?>
+				
+				<p class="forgetmenot"><label for="rememberme"><input name="rememberme" type="checkbox" id="rememberme" value="forever" <?php checked( $rememberme ); ?> /> <?php esc_attr_e('Remember Me'); ?></label></p>
+				
+				<p class="submit">
+					<input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="<?php esc_attr_e('Log In'); ?>" />
+				</p>
+				
+				<!-- Hidden Fields -->
+				
+				<input type="hidden" name="testcookie" value="1" />
+	
+				<?php if ( $interim_login ) { ?>
+				
+					<input type="hidden" name="interim-login" value="1" />
+					
+				<?php } else { ?>
+				
+					<input type="hidden" name="redirect_to" value="<?php echo esc_attr($redirect_to); ?>" />
+			
+				<?php } ?>
+				
+				<?php if ( $customize_login ) { ?>
+				
+					<input type="hidden" name="customize-login" value="1" />
+				
+				<?php }; ?>
+					
+				
+			</form>
+			<?php
+			
+		break;
+	} // end switch
 }
 
 /*
@@ -573,7 +596,10 @@ function signin_header_title() {
 }
 
 function signin_classes() {
-	global $action, $interim_login;
+	global $action;
+	
+	// not exactly sure how this is used but keeping it for now
+	$interim_login = isset( $_REQUEST['interim-login'] );	
 	
 	$classes = array( 'login-action-' . $action, 'wp-core-ui' );
 	
@@ -676,7 +702,7 @@ function login_header( $title = 'Log In', $message = '', $wp_error = '' ) {
 	global $error, $interim_login, $current_site, $action, $shake_error_codes;
 	$GLOBALS['singin_errors'] = $wp_error;
 	get_signin_template( 'signin-header' );
-} // End of login_header()
+}
 
 /**
  * Outputs the footer for the login page.
