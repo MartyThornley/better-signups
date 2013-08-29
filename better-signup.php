@@ -30,9 +30,6 @@ Author URI: http://martythornley.com
 	
 	if ( !defined ( 'BSIGN_URL' ) ) { define ( 'BSIGN_URL' , $pluginURL ); };
 	
-	/** temporary debug functions */
-	include( trailingslashit( BSIGN_DIR ) . 'includes/debug.php' );
-	
 	/** WordPress Administration Screen API */
 	require_once(ABSPATH . 'wp-admin/includes/screen.php');
 	
@@ -75,8 +72,6 @@ Author URI: http://martythornley.com
 	 */
 	function bsign_init() {
 		
-		add_filter( 'logout_url' , 'bsign_logout_url' );
-		
 	    if ( !empty( $_SERVER['REQUEST_URI'] ) ) {
 			if ( strpos( $_SERVER['REQUEST_URI'] , '?' ) ) {
 				$url_array = explode( '?' , $_SERVER['REQUEST_URI']);
@@ -89,15 +84,13 @@ Author URI: http://martythornley.com
 			$url = trim( $url , '/' );
 	        $urlvars = explode( '/' , $url );
 	    }
-
+		
 		$last = array_pop( $urlvars );
 		
 		if ( isset( $vars ) && strpos( $vars , 'logout' ) != false )
 			$last = 'signout';		
 		
-		$action = isset( $url_array[1] ) ? '?'.$url_array[1] : '';	
-		
-		
+		$action = bsign_get_query_string( $_SERVER['REQUEST_URI'] );			
 		
 		if ( defined ( 'REDIRECTS_URLS' ) ) {	
 
@@ -112,6 +105,8 @@ Author URI: http://martythornley.com
 			}
 			
 			if ( defined ( 'REDIRECT_LOGIN_URLS' ) ) {	
+				
+				add_filter( 'logout_url' , 'bsign_logout_url' );
 
 				// skip core wp-login.php
 				// seems to work with or without this??
@@ -120,8 +115,9 @@ Author URI: http://martythornley.com
 				if ( $last == 'signout' )
 					wp_redirect( home_url( 'signout' . bsign_get_query_string( $_SERVER['REQUEST_URI'] ) ) );
 					
-				elseif ( strpos( $_SERVER['REQUEST_URI'] , 'wp-login.php' ) != false || $last == 'signin' )
+				elseif ( strpos( $_SERVER['REQUEST_URI'] , 'wp-login.php' ) != false || $last == 'signin' ) 
 					wp_redirect( home_url( 'signin' . $action ) );
+				
 					
 			}
 			
@@ -133,7 +129,6 @@ Author URI: http://martythornley.com
 				break;
 	
 				case 'signin' :
-					
 					if ( is_user_logged_in() ) {
 						wp_redirect( admin_url() );
 						exit;

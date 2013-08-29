@@ -28,7 +28,6 @@
 	// Remove all stored post data on logging out.
 	// This could be added by add_action('login_head'...) like wp_shake_js()
 	// but maybe better if it's not removable by plugins
-	$wp_error = $GLOBALS['singin_errors'];
 	if ( ! empty( $wp_error ) && 'loggedout' == $wp_error->get_error_code() ) {
 		?>
 		<script>if("sessionStorage" in window){try{for(var key in sessionStorage){if(key.indexOf("wp-autosave-")!=-1){sessionStorage.removeItem(key)}}}catch(e){}};</script>

@@ -64,10 +64,12 @@ function process_login_form( $action='' , $user='' ) {
 				}
 			}
 			$action = 'lostpassword';	
-		break;	
+		break;
+		
+		default :
+			$action = 'login';
 		
 	}
-	
 	return $action;	
 }
 
@@ -76,6 +78,7 @@ function process_login_form( $action='' , $user='' ) {
  *
  */
 function do_login_form( $action = '' , $user = '' ) {
+
 
 	switch( $action ) {
 	
@@ -241,7 +244,7 @@ function do_login_form( $action = '' , $user = '' ) {
 			}
 		
 			$reauth = empty( $_REQUEST['reauth'] ) ? false : true;
-		
+			
 			// If the user was redirected to a secure login form from a non-secure admin page, and secure login is required but secure admin is not, then don't use a secure
 			// cookie and redirect back to the referring non-secure admin page. This allows logins to always be POSTed over SSL while allowing the user to choose visiting
 			// the admin via http or https.
@@ -289,6 +292,9 @@ function do_login_form( $action = '' , $user = '' ) {
 						
 					elseif ( !$user->has_cap( 'edit_posts' ) )
 						$redirect_to = admin_url( 'profile.php' );
+						
+					else 
+						$redirect_to = admin_url();
 				}
 				
 				wp_safe_redirect( $redirect_to );
@@ -297,7 +303,7 @@ function do_login_form( $action = '' , $user = '' ) {
 				
 			}
 			
-			$errors = wp_signin_errors( 'signin' , $user );
+			//$errors = wp_signin_errors( 'signin' , $user );
 			
 			// Clear any stale cookies.
 			if ( $reauth )
