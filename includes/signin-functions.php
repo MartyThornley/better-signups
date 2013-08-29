@@ -4,29 +4,11 @@
  * This should process all posted info and figure out what form to load.
  * Most of it is still buried in do_login_form();
  */
-function process_login_form() {
+function process_login_form( $action='' , $user='' ) {
 
-	$action = isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'login';
 	$errors = new WP_Error();
-	
-	if ( isset( $_GET['key'] ) )
-		$action = 'resetpass';
-	
-	$signin_actions = array( 'postpass', 'logout', 'loggedout' , 'lostpassword', 'retrievepassword', 'resetpass', 'rp', 'register', 'login' );
-	
-	// validate action so as to default to the login screen
-	if ( !in_array( $action , $signin_actions , true ) && false === has_filter( 'login_form_' . $action ) )
-		$action = 'login';
-	
-	//debug
-	if ( defined ( 'BSIGN_DEBUG' ) )
-		_debug_echo( '$action : ' . $action , __FILE__ , __LINE__ );	
-	
-	$http_post = ( 'POST' == $_SERVER['REQUEST_METHOD'] );
-	
 
-	if ( $_GET['checkemail'] == 'registered' )
-		$action = 'login';
+	$http_post = ( 'POST' == $_SERVER['REQUEST_METHOD'] );
 
 	switch( $action ) {
 		
@@ -71,6 +53,19 @@ function process_login_form() {
 		break;
 		
 		case 'lostpassword' :
+		
+		case 'retrievepassword' :
+			if ( $http_post ) {
+				$errors = retrieve_password();
+				if ( !is_wp_error( $errors ) ) {
+					$redirect_to = !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : 'signup?checkemail=confirm';
+					wp_safe_redirect( $redirect_to );
+					exit();
+				}
+			}
+			$action = 'lostpassword';	
+		break;	
+		
 	}
 	
 	return $action;	
@@ -80,48 +75,23 @@ function process_login_form() {
  * Determines what we are trying to do and outputs the login/logout/password reset forms.
  *
  */
-function do_login_form( $action = '' ) {
+function do_login_form( $action = '' , $user = '' ) {
 
-	//debug
-	if ( defined ( 'BSIGN_DEBUG' ) )
-		_debug_echo( '$action : ' . $action  , __FILE__ , __LINE__ );
-	
 	switch( $action ) {
+	
+		case 'lostpassword' :
 		
 		case 'retrievepassword' :
-		
-			if ( $http_post ) {
-				$errors = retrieve_password();
-				if ( !is_wp_error( $errors ) ) {
-					$redirect_to = !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : 'signup?checkemail=confirm';
-					wp_safe_redirect( $redirect_to );
-					exit();
-				}
-			}
-		
-			if ( isset( $_GET['error'] ) && 'invalidkey' == $_GET['error'] ) $errors->add( 'invalidkey', __( 'Sorry, that key does not appear to be valid.' ) );
-			$redirect_to = apply_filters( 'lostpassword_redirect', !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : '' );
-			
+
+			$errors = retrieve_password();
 			?>
 
 				<?php do_action( 'lost_password' ); ?>
 				
 				<?php login_header(__( 'Lost Password' ), '<p class="message">' . __( 'Please enter your username or email address. You will receive a link to create a new password via email.' ) . '</p>', $errors ); ?>
-			
-				<?php $user_login = isset( $_POST['user_login'] ) ? wp_unslash( $_POST['user_login'] ) : ''; ?>
-				
-				<form name="lostpasswordform" id="lostpasswordform" action="<?php echo esc_url( site_url( 'signin?action=lostpassword', 'login_post' ) ); ?>" method="post">
-					<p>
-						<label for="user_login" ><?php _e('Username or E-mail:') ?><br />
-						<input type="text" name="user_login" id="user_login" class="input" value="<?php echo esc_attr($user_login); ?>" size="20" /></label>
-					</p>
-					
-					<?php do_action('lostpassword_form'); ?>
-					
-					<input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_to ); ?>" />
-					<p class="submit"><input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="<?php esc_attr_e('Get New Password'); ?>" /></p>
-				</form>
 
+				<?php wp_signin_form( 'lostpassword' , $errors ); ?>
+				
 				<?php wp_signin_nav(); ?>
 
 				<?php login_footer( 'user_login' ); ?>
@@ -132,9 +102,9 @@ function do_login_form( $action = '' ) {
 		case 'resetpass' :
 		
 		case 'rp' :
-		
+			
 			$user = check_password_reset_key( $_GET['key'], $_GET['login'] );
-		
+			
 			if ( is_wp_error($user) ) {
 				wp_redirect( site_url( 'signin?action=lostpassword&error=invalidkey' ) );
 				exit;
@@ -327,40 +297,7 @@ function do_login_form( $action = '' ) {
 				
 			}
 			
-			$errors = $user;
-			// Clear errors if loggedout is set.
-			if ( !empty( $_GET['loggedout'] ) || $reauth )
-				$errors = new WP_Error();
-		
-			// If cookies are disabled we can't log in even with a valid user+pass
-			if ( isset( $_POST['testcookie'] ) && empty( $_COOKIE[TEST_COOKIE] ) )
-				$errors->add( 'test_cookie', __("<strong>ERROR</strong>: Cookies are blocked or not supported by your browser. You must <a href='http://www.google.com/cookies.html'>enable cookies</a> to use WordPress.") );
-		
-			if ( $interim_login ) {
-				if ( ! $errors->get_error_code() )
-					$errors->add( 'expired', __('Session expired. Please log in again. You will not move away from this page.'), 'message' );
-			} else {
-				// Some parts of this script use the main login form to display a message
-				if ( isset( $_GET['loggedout'] ) && true == $_GET['loggedout'] )
-					$errors->add( 'loggedout', __('You are now logged out.'), 'message' );
-					
-				elseif	( isset($_GET['registration']) && 'disabled' == $_GET['registration'] )
-					$errors->add( 'registerdisabled', __('User registration is currently not allowed.') );
-					
-				elseif	( isset($_GET['checkemail']) && 'confirm' == $_GET['checkemail'] )
-					$errors->add( 'confirm', __('Check your e-mail for the confirmation link.'), 'message' );
-					
-				elseif	( isset($_GET['checkemail']) && 'newpass' == $_GET['checkemail'] )
-					$errors->add( 'newpass', __('Check your e-mail for your new password.'), 'message' );
-					
-				elseif	( isset($_GET['checkemail']) && 'registered' == $_GET['checkemail'] )
-					$errors->add( 'registered', __('Registration complete. Please check your e-mail.'), 'message' );
-					
-				elseif ( strpos( $redirect_to, 'about.php?updated' ) )
-					$errors->add( 'updated', __( '<strong>You have successfully updated WordPress!</strong> Please log back in to experience the awesomeness.' ), 'message' );
-			}
-		
-			$errors = apply_filters( 'wp_login_errors', $errors, $redirect_to );
+			$errors = wp_signin_errors( 'signin' , $user );
 			
 			// Clear any stale cookies.
 			if ( $reauth )
@@ -371,9 +308,9 @@ function do_login_form( $action = '' ) {
 			
 				<?php login_header( __('Log In') , '', $errors ); ?>
 				
-					<?php wp_signin_form( 'signin' ); ?>
+					<?php wp_signin_form( 'signin' , $errors ); ?>
 			
-					<?php wp_signin_nav(); ?>
+					<?php wp_signin_nav( 'signin' ); ?>
 		
 					<script type="text/javascript">
 						function wp_attempt_focus() {
@@ -423,10 +360,59 @@ function do_login_form( $action = '' ) {
 	} // end action switch
 }
 
+function wp_signin_errors( $action, $start ) {
+
+	$errors = $start;
+	
+	switch ( $action ) {
+	
+		case 'signin' :
+				
+			// Clear errors if loggedout is set.
+			if ( !empty( $_GET['loggedout'] ) || $reauth )
+				$errors = new WP_Error();
+		
+			// If cookies are disabled we can't log in even with a valid user+pass
+			if ( isset( $_POST['testcookie'] ) && empty( $_COOKIE[TEST_COOKIE] ) )
+				$errors->add( 'test_cookie', __("<strong>ERROR</strong>: Cookies are blocked or not supported by your browser. You must <a href='http://www.google.com/cookies.html'>enable cookies</a> to use WordPress.") );
+		
+			if ( $interim_login ) {
+				if ( ! $errors->get_error_code() )
+					$errors->add( 'expired', __('Session expired. Please log in again. You will not move away from this page.'), 'message' );
+			} else {
+				// Some parts of this script use the main login form to display a message
+				if ( isset( $_GET['loggedout'] ) && true == $_GET['loggedout'] )
+					$errors->add( 'loggedout', __('You are now logged out.'), 'message' );
+					
+				elseif	( isset($_GET['registration']) && 'disabled' == $_GET['registration'] )
+					$errors->add( 'registerdisabled', __('User registration is currently not allowed.') );
+					
+				elseif	( isset($_GET['checkemail']) && 'confirm' == $_GET['checkemail'] )
+					$errors->add( 'confirm', __('Check your e-mail for the confirmation link.'), 'message' );
+					
+				elseif	( isset($_GET['checkemail']) && 'newpass' == $_GET['checkemail'] )
+					$errors->add( 'newpass', __('Check your e-mail for your new password.'), 'message' );
+					
+				elseif	( isset($_GET['checkemail']) && 'registered' == $_GET['checkemail'] )
+					$errors->add( 'registered', __('Registration complete. Please check your e-mail.'), 'message' );
+					
+				elseif ( strpos( $redirect_to, 'about.php?updated' ) )
+					$errors->add( 'updated', __( '<strong>You have successfully updated WordPress!</strong> Please log back in to experience the awesomeness.' ), 'message' );
+			}
+		
+			$errors = apply_filters( 'wp_login_errors', $errors, $redirect_to );	
+	
+		break;
+	
+	}
+	
+	return $errors;
+}
+
 /* 
  * New function to put all login and out forms into one
  */
-function wp_signin_form( $form='' ) {
+function wp_signin_form( $form='' , $errors=false ) {
 	
 	switch ( $form ) {
 	
@@ -486,6 +472,32 @@ function wp_signin_form( $form='' ) {
 			<?php
 			
 		break;
+		
+		case 'lostpassword' :
+		
+		case 'retrievepassword' :
+
+			if ( isset( $_GET['error'] ) && 'invalidkey' == $_GET['error'] ) 
+				$errors->add( 'invalidkey', __( 'Sorry, that key does not appear to be valid.' ) );
+			$redirect_to = apply_filters( 'lostpassword_redirect', !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : '' );
+	
+			?>			
+				<?php $user_login = isset( $_POST['user_login'] ) ? wp_unslash( $_POST['user_login'] ) : ''; ?>
+				
+				<form name="lostpasswordform" id="lostpasswordform" action="<?php echo esc_url( site_url( 'signin?action=lostpassword', 'login_post' ) ); ?>" method="post">
+					<p>
+						<label for="user_login" ><?php _e('Username or E-mail:') ?><br />
+						<input type="text" name="user_login" id="user_login" class="input" value="<?php echo esc_attr($user_login); ?>" size="20" /></label>
+					</p>
+					
+					<?php do_action('lostpassword_form'); ?>
+					
+					<input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_to ); ?>" />
+					<p class="submit"><input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="<?php esc_attr_e('Get New Password'); ?>" /></p>
+				</form>
+			<?php
+		break;
+		
 	} // end switch
 }
 
@@ -671,7 +683,7 @@ function signin_errors() {
  * First looks in child theme, then theme, then plugin
  */
 function get_signin_template( $template ) {
-	global $wp_error;
+	global $wp_error, $message, $error, $interim_login, $current_site, $action, $shake_error_codes;
 	$template = $template .'.php';
 
 	if ( file_exists( trailingslashit( get_stylesheet_directory() ) . $template ) )
@@ -700,7 +712,9 @@ function get_signin_template( $template ) {
  */
 function login_header( $title = 'Log In', $message = '', $wp_error = '' ) {
 	global $error, $interim_login, $current_site, $action, $shake_error_codes;
+	$GLOBALS['singin_title'] = $title;
 	$GLOBALS['singin_errors'] = $wp_error;
+	$GLOBALS['singin_message'] = $message;
 	get_signin_template( 'signin-header' );
 }
 

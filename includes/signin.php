@@ -37,12 +37,31 @@
 	setcookie( TEST_COOKIE, 'WP Cookie check', 0, COOKIEPATH, COOKIE_DOMAIN );
 	if ( SITECOOKIEPATH != COOKIEPATH )
 		setcookie( TEST_COOKIE, 'WP Cookie check', 0, SITECOOKIEPATH, COOKIE_DOMAIN );
-	
-	// allow plugins to override the default actions, and to add extra actions if they want
-	do_action( 'login_init' );
 
-	$action = process_login_form();
-
-	do_action( 'login_form_' . $action );
+	/*** Determine $action ***/
+		$action = isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'login';
+		
+		if ( isset( $_GET['key'] ) )
+			$action = 'resetpass';
+		
+		$signin_actions = array( 'postpass', 'logout', 'loggedout' , 'lostpassword', 'retrievepassword', 'resetpass', 'rp', 'register', 'login' );
+		// nice place for a filter here
+		
+		// validate action so as to default to the login screen
+		if ( !in_array( $action , $signin_actions , true ) && false === has_filter( 'login_form_' . $action ) )
+			$action = 'login';
+		
+		if ( $_GET['checkemail'] == 'registered' )
+			$action = 'login';
 	
-	do_login_form( $action );
+	/*** allow plugins to jump in ***/
+		do_action( 'login_init' );
+	
+	/*** process posted info based on $action ***/
+		$action = process_login_form( $action );
+		
+	/*** allow plugins to jump in again ***/
+		do_action( 'login_form_' . $action );
+	
+	/*** display form based on processed info and $action ***/
+		do_login_form( $action );

@@ -3,6 +3,11 @@
  * Signin Page Header
  */
 ?>
+
+<?php $wp_error = $GLOBALS['singin_errors']; ?>
+<?php $title = $GLOBALS['singin_title']; ?>
+<?php $message = $GLOBALS['singin_message']; ?>
+
 <!DOCTYPE html>
 	<html xmlns="http://www.w3.org/1999/xhtml" <?php language_attributes(); ?>>
 	<head>
@@ -14,7 +19,7 @@
 	wp_admin_css( 'colors-fresh', true );
 	
 	$signin_header_link = signin_header_link();
-	$signin_header_title = signin_header_title();
+	//$signin_header_title = signin_header_title();
 
 	if ( wp_is_mobile() ) { ?>
 		<meta name="viewport" content="width=320, initial-scale=0.9, maximum-scale=1.0, user-scalable=0" /><?php

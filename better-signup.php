@@ -93,7 +93,11 @@ Author URI: http://martythornley.com
 		$last = array_pop( $urlvars );
 		
 		if ( isset( $vars ) && strpos( $vars , 'logout' ) != false )
-			$last = 'signout';
+			$last = 'signout';		
+		
+		$action = isset( $url_array[1] ) ? '?'.$url_array[1] : '';	
+		
+		
 		
 		if ( defined ( 'REDIRECTS_URLS' ) ) {	
 
@@ -103,12 +107,12 @@ Author URI: http://martythornley.com
 				add_action( 'hijack_signup' , 'bsign_exit' );
 			
 				if ( strpos( $_SERVER['REQUEST_URI'] , 'wp-signup.php' ) != false )
-					wp_redirect( home_url( 'signup' ) );
+					wp_redirect( home_url( 'signup' . $action ) );
 			
 			}
 			
 			if ( defined ( 'REDIRECT_LOGIN_URLS' ) ) {	
-				
+
 				// skip core wp-login.php
 				// seems to work with or without this??
 				// add_action( 'hijack_login' , 'bsign_exit' );
@@ -117,7 +121,7 @@ Author URI: http://martythornley.com
 					wp_redirect( home_url( 'signout' . bsign_get_query_string( $_SERVER['REQUEST_URI'] ) ) );
 					
 				elseif ( strpos( $_SERVER['REQUEST_URI'] , 'wp-login.php' ) != false || $last == 'signin' )
-					wp_redirect( home_url( 'signin' ) );
+					wp_redirect( home_url( 'signin' . $action ) );
 					
 			}
 			
@@ -129,6 +133,7 @@ Author URI: http://martythornley.com
 				break;
 	
 				case 'signin' :
+					
 					if ( is_user_logged_in() ) {
 						wp_redirect( admin_url() );
 						exit;
