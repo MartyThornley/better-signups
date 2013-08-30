@@ -78,15 +78,18 @@ function process_login_form( $action='' , $user='' ) {
  *
  */
 function do_login_form( $action = '' , $user = '' ) {
-
-
+	
+	if ( defined( 'BSIGN_DEBUG' ) )
+		bsign_action_tracker( $action );
+	
 	switch( $action ) {
 	
 		case 'lostpassword' :
 		
 		case 'retrievepassword' :
-
-			$errors = retrieve_password();
+			
+			if ( 'POST' == $_SERVER['REQUEST_METHOD'] )
+				$errors = retrieve_password();
 			?>
 
 				<?php do_action( 'lost_password' ); ?>
@@ -219,9 +222,6 @@ function do_login_form( $action = '' , $user = '' ) {
 		default:
 		
 			$secure_cookie = '';
-			$customize_login = isset( $_REQUEST['customize-login'] );
-			if ( $customize_login )
-				wp_enqueue_script( 'customize-base' );
 		
 			// If the user wants ssl but the session is not ssl, force a secure cookie.
 			if ( !empty( $_POST['log'] ) && !force_ssl_admin() ) {
@@ -242,7 +242,11 @@ function do_login_form( $action = '' , $user = '' ) {
 			} else {
 				$redirect_to = admin_url();
 			}
-		
+			
+			$customize_login = isset( $_REQUEST['customize-login'] );
+			if ( $customize_login )
+				wp_enqueue_script( 'customize-base' );
+						
 			$reauth = empty( $_REQUEST['reauth'] ) ? false : true;
 			
 			// If the user was redirected to a secure login form from a non-secure admin page, and secure login is required but secure admin is not, then don't use a secure
@@ -311,12 +315,14 @@ function do_login_form( $action = '' , $user = '' ) {
 			?>
 			
 			<?php /*** Start Form ***/ ?>
-			
+				
+				<?php $errors = wp_signin_errors( 'signin' , $user ); ?>
+				
 				<?php login_header( __('Log In') , '', $errors ); ?>
 				
-					<?php wp_signin_form( 'signin' , $errors ); ?>
+				<?php wp_signin_form( 'signin' , $errors ); ?>
 			
-					<?php wp_signin_nav( 'signin' ); ?>
+				<?php wp_signin_nav( 'signin' ); ?>
 		
 					<script type="text/javascript">
 						function wp_attempt_focus() {
