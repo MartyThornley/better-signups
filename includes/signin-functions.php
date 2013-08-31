@@ -144,7 +144,7 @@ function do_login_form( $action = '' , $user = '' ) {
 				$errors->add( 'password_reset_mismatch', __( 'The passwords do not match.' ) );
 			?>
 			
-			<?php wp_enqueue_script('utils');
+			<?php wp_enqueue_script('utils'); ?>
 			
 			<?php wp_enqueue_script('user-profile'); ?>
 			
