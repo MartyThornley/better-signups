@@ -1,5 +1,14 @@
 <?php
+/**
+ * WordPress Signout Page
+ *
+ * Handles signing out and redirection
+ *
+ * @package WordPress
+ */	
 
+	set_current_screen( 'signout' );
+	
 	check_admin_referer( 'log-out' );
 
 	do_action( 'wp_signout_page' );

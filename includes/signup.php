@@ -1,4 +1,13 @@
 <?php
+/**
+ * WordPress Signup Page
+ *
+ * Handles registration of new users and sites
+ *
+ * @package WordPress
+ */		
+
+	set_current_screen( 'signup' );
 	
 	add_action( 'wp_head', 'wp_no_robots' );
 	

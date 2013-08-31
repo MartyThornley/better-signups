@@ -7,6 +7,7 @@
  *
  * @package WordPress
  */
+
 	set_current_screen( 'signin' );
 	
 	// Redirect to https login if forced to use SSL
@@ -44,7 +45,7 @@
 		if ( isset( $_GET['key'] ) )
 			$action = 'resetpass';
 		
-		$signin_actions = array( 'postpass', 'logout', 'loggedout' , 'lostpassword', 'retrievepassword', 'resetpass', 'rp', 'register', 'login' );
+		$signin_actions = array( 'signup' , 'signin' , 'signout' , 'postpass', 'register', 'login' , 'logout', 'loggedout' , 'lostpassword', 'retrievepassword', 'resetpass', 'rp' );
 		// nice place for a filter here
 		
 		// validate action so as to default to the login screen

@@ -161,9 +161,6 @@ Author URI: http://martythornley.com
 	 * Redirect to our signup page
 	 */	
 	function bsign_signup_redirect() {
-		
-		global $action;
-		
 		include( trailingslashit( BSIGN_DIR ) . 'includes/signup-functions.php' );
 		include( trailingslashit( BSIGN_DIR ) . 'includes/signup.php' );
 		exit;

@@ -4,7 +4,7 @@
  * This should process all posted info and figure out what form to load.
  * Most of it is still buried in do_login_form();
  */
-function process_login_form( $action='' , $user='' ) {
+function process_login_form( $action='' ) {
 
 	$errors = new WP_Error();
 
@@ -65,6 +65,35 @@ function process_login_form( $action='' , $user='' ) {
 			}
 			$action = 'lostpassword';	
 		break;
+
+		case 'resetpass' :
+		
+		case 'rp' :
+			
+			$user = check_password_reset_key( $_GET['key'], $_GET['login'] );
+			
+			if ( is_wp_error($user) ) {
+				wp_redirect( site_url( 'signin?action=lostpassword&error=invalidkey' ) );
+				exit;
+			}
+		
+			$errors = new WP_Error();
+		
+			if ( isset( $_POST['pass1'] ) && $_POST['pass1'] != $_POST['pass2'] )
+				$errors->add( 'password_reset_mismatch', __( 'The passwords do not match.' ) );
+		
+			do_action( 'validate_password_reset', $errors, $user );
+		
+			if ( ( ! $errors->get_error_code() ) && isset( $_POST['pass1'] ) && !empty( $_POST['pass1'] ) ) {
+				reset_password($user, $_POST['pass1']);
+				login_header( __( 'Password Reset' ), '<p class="message reset-pass">' . __( 'Your password has been reset.' ) . ' <a href="' . esc_url( wp_login_url() ) . '">' . __( 'Log in' ) . '</a></p>' );
+				login_footer();
+				exit;
+			}
+			
+			$action = 'rp';
+			
+		break;
 		
 		default :
 			$action = 'login';
@@ -109,113 +138,36 @@ function do_login_form( $action = '' , $user = '' ) {
 		
 		case 'rp' :
 			
-			$user = check_password_reset_key( $_GET['key'], $_GET['login'] );
-			
-			if ( is_wp_error($user) ) {
-				wp_redirect( site_url( 'signin?action=lostpassword&error=invalidkey' ) );
-				exit;
-			}
-		
 			$errors = new WP_Error();
 		
 			if ( isset( $_POST['pass1'] ) && $_POST['pass1'] != $_POST['pass2'] )
 				$errors->add( 'password_reset_mismatch', __( 'The passwords do not match.' ) );
-		
-			do_action( 'validate_password_reset', $errors, $user );
-		
-			if ( ( ! $errors->get_error_code() ) && isset( $_POST['pass1'] ) && !empty( $_POST['pass1'] ) ) {
-				reset_password($user, $_POST['pass1']);
-				login_header( __( 'Password Reset' ), '<p class="message reset-pass">' . __( 'Your password has been reset.' ) . ' <a href="' . esc_url( wp_login_url() ) . '">' . __( 'Log in' ) . '</a></p>' );
-				login_footer();
-				exit;
-			}
-		
-			wp_enqueue_script('utils');
-			wp_enqueue_script('user-profile');
-		
 			?>
 			
-			<?php /*** Start Form ***/ ?>
+			<?php wp_enqueue_script('utils');
 			
-				<?php login_header( __('Reset Password'), '<p class="message reset-pass">' . __('Enter your new password below.') . '</p>', $errors ); ?>
+			<?php wp_enqueue_script('user-profile'); ?>
+			
+			<?php login_header( __('Reset Password'), '<p class="message reset-pass">' . __('Enter your new password below.') . '</p>', $errors ); ?>
 				
-				<form name="resetpassform" id="resetpassform" action="<?php echo esc_url( site_url( 'signin?action=resetpass&key=' . urlencode( $_GET['key'] ) . '&login=' . urlencode( $_GET['login'] ), 'login_post' ) ); ?>" method="post" autocomplete="off">
-					<input type="hidden" id="user_login" value="<?php echo esc_attr( $_GET['login'] ); ?>" autocomplete="off" />
+			<?php wp_signin_form( 'rp' , $errors ); ?>
 				
-					<p>
-						<label for="pass1"><?php _e('New password') ?><br />
-						<input type="password" name="pass1" id="pass1" class="input" size="20" value="" autocomplete="off" /></label>
-					</p>
-					<p>
-						<label for="pass2"><?php _e('Confirm new password') ?><br />
-						<input type="password" name="pass2" id="pass2" class="input" size="20" value="" autocomplete="off" /></label>
-					</p>
-				
-					<div id="pass-strength-result" class="hide-if-no-js"><?php _e('Strength indicator'); ?></div>
-					<p class="description indicator-hint"><?php _e('Hint: The password should be at least seven characters long. To make it stronger, use upper and lower case letters, numbers and symbols like ! " ? $ % ^ &amp; ).'); ?></p>
-				
-					<br class="clear" />
-					<p class="submit"><input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="<?php esc_attr_e('Reset Password'); ?>" /></p>
-				</form>
-				
-				<?php wp_signin_nav(); ?>
+			<?php wp_signin_nav(); ?>
 								
-				<?php login_footer( 'user_pass' ); ?>
-				
-			<?php /*** End Form ***/ ?>
+			<?php login_footer( 'user_pass' ); ?>
 			
 			<?php
 		break;
 		
+		/*
 		// this should go through /signup now
 		case 'register' :
-
-			$user_login = '';
-			$user_email = '';
-			if ( $http_post ) {
-				$user_login = $_POST['user_login'];
-				$user_email = $_POST['user_email'];
-				$errors = register_new_user( $user_login, $user_email );
-				if ( !is_wp_error( $errors ) ) {
-					$redirect_to = !empty( $_POST['redirect_to'] ) ? $_POST['redirect_to'] : 'signup?checkemail=registered';
-					wp_safe_redirect( $redirect_to );
-					exit();
-				}
-			}
-					
-			$redirect_to = apply_filters( 'registration_redirect', !empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : '' );
-			?>
+		
+			// just erased this for now.
+			// can still find original in wp-login.php					
 			
-			<?php /*** Start Form ***/ ?>
-			
-				<?php login_header( __('Registration Form'), '<p class="message register">' . __('Register For This Site') . '</p>', $errors ); ?>
-				
-				<form name="registerform" id="registerform" action="<?php echo esc_url( site_url('signup?action='.$action , 'login_post') ); ?>" method="post">
-					<p>
-						<label for="user_login"><?php _e('Username') ?><br />
-						<input type="text" name="user_login" id="user_login" class="input" value="<?php echo esc_attr(wp_unslash($user_login)); ?>" size="20" /></label>
-					</p>
-					<p>
-						<label for="user_email"><?php _e('E-mail') ?><br />
-						<input type="text" name="user_email" id="user_email" class="input" value="<?php echo esc_attr(wp_unslash($user_email)); ?>" size="25" /></label>
-					</p>
-					
-					<?php do_action('register_form'); ?>
-					
-					<p id="reg_passmail"><?php _e('A password will be e-mailed to you.') ?></p>
-					<br class="clear" />
-					<input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_to ); ?>" />
-					<p class="submit"><input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="<?php esc_attr_e('Register'); ?>" /></p>
-				</form>
-				
-				<?php wp_signin_nav(); ?>
-
-				<?php login_footer( 'user_login' ); ?>
-				
-			<?php /*** End Form ***/ ?>
-			
-			<?php
 		break;
+		*/
 		
 		case 'login' :
 		
@@ -506,6 +458,31 @@ function wp_signin_form( $form='' , $errors=false ) {
 					
 					<input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_to ); ?>" />
 					<p class="submit"><input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="<?php esc_attr_e('Get New Password'); ?>" /></p>
+				</form>
+			<?php
+		break;
+
+		case 'resetpass' :
+		
+		case 'rp' :
+			?>
+				<form name="resetpassform" id="resetpassform" action="<?php echo esc_url( site_url( 'signin?action=resetpass&key=' . urlencode( $_GET['key'] ) . '&login=' . urlencode( $_GET['login'] ), 'login_post' ) ); ?>" method="post" autocomplete="off">
+					<input type="hidden" id="user_login" value="<?php echo esc_attr( $_GET['login'] ); ?>" autocomplete="off" />
+				
+					<p>
+						<label for="pass1"><?php _e('New password') ?><br />
+						<input type="password" name="pass1" id="pass1" class="input" size="20" value="" autocomplete="off" /></label>
+					</p>
+					<p>
+						<label for="pass2"><?php _e('Confirm new password') ?><br />
+						<input type="password" name="pass2" id="pass2" class="input" size="20" value="" autocomplete="off" /></label>
+					</p>
+				
+					<div id="pass-strength-result" class="hide-if-no-js"><?php _e('Strength indicator'); ?></div>
+					<p class="description indicator-hint"><?php _e('Hint: The password should be at least seven characters long. To make it stronger, use upper and lower case letters, numbers and symbols like ! " ? $ % ^ &amp; ).'); ?></p>
+				
+					<br class="clear" />
+					<p class="submit"><input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="<?php esc_attr_e('Reset Password'); ?>" /></p>
 				</form>
 			<?php
 		break;
